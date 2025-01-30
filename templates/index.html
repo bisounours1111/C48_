@@ -7,6 +7,7 @@
     <title>EcoMELange</title>
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/ressources/js/login.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.12/css/weather-icons.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -50,7 +51,7 @@
                     <li><a href="#" class="block py-2 px-3 text-blue-700 hover:text-blue-700 md:p-0 dark:text-white">Accueil</a></li>
                     <li><a href="#" class="block py-2 px-3 text-gray-900 hover:text-blue-700 md:p-0  dark:text-white">Blog/Actualités</a></li>
                     <li>
-                        <a href="#" class="inline-block py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <a id="openLoginBtn" class="inline-block py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500">
                             Connexion
                         </a>
                     </li>
@@ -151,6 +152,9 @@
         </div>
     </div>
 
+    <div id="loginContainer" class="hidden fixed inset-0 bg-gray-100 bg-opacity-50 flex items-center justify-center">
+        <div id="loginContent"></div>
+    </div>
 </body>
 
 <script src="/static/ressources/js/meteo.js"></script>

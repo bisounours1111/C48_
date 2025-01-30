@@ -46,11 +46,11 @@ def validEmail(email : str) :
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(pattern, email) is not None
 
-def hashingPw(password : str) :
-    bytes = password.encode('utf-8')
+def hashingPw(password: str) -> str:
+    bytes_pw = password.encode('utf-8')
     salt = bcrypt.gensalt()
-    hashedPassword = bcrypt.hashpw(bytes,salt)
-    return hashedPassword
+    hashed_password = bcrypt.hashpw(bytes_pw, salt)
+    return hashed_password.decode('utf-8') 
 
 def isUsernameTaken(username : str) :
     cur = conn.cursor()
@@ -76,4 +76,4 @@ def checklogin(username : str, password : str):
         return bcrypt.checkpw(inputPassword,dbpassword_bytes)
     
 if __name__ == "__main__":
-    print(checklogin('test', 'test'))
+    print(hashingPw('test'))

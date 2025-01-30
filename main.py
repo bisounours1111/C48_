@@ -1,25 +1,27 @@
 from cred import conn
 import checks
-import tokens
-import mail
 import update
-import random
-import ast
-import user_profile
-from flask import Flask, render_template, request , redirect, make_response
+from flask import Flask, render_template, request , redirect, make_response, jsonify
 
 app = Flask(__name__)
 
 cur = conn.cursor()
 
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-@app.route('/register', methods=['GET','POST'])
+@app.route("/get_login_template")
+def get_login_template():
+    return render_template("login_template.html")
+
+@app.route('/register', methods=['POST'])
 def register():
     if request.method == 'POST':
         email = request.form['email']
         username = request.form['username']
         password = request.form['password']
-        confirmed_pw = request.form['confirmed_password']
+        confirmed_pw = request.form['confirm_password']
         error_message = None
 
         if checks.isUsernameTaken(username):
@@ -36,36 +38,30 @@ def register():
             error_message = "Les mots de passe ne correspondent pas"
 
         if error_message:
-            return render_template('register.html', message=error_message)
+            return jsonify({"status": "error", "message": error_message})
         
         update.registertoDB(username, email, password)
-        return redirect('/login')
+        return jsonify({"status": "success", "message": "Vous êtes maintenant inscrit"})
     
-    return render_template('register.html')
 
-
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['POST'])
 def login():
     if request.method == "POST":
         username = request.form['username']
         password = request.form['password']
         error_message = None
         
-        if checks.canConnect(username, password):
-            resp = make_response(redirect('/'))
+        if checks.checklogin(username, password):
+            resp = make_response(jsonify({"status": "success", "message": "Vous êtes maintenant connecté"}))
             resp.set_cookie('username', username)
             return resp
         
         error_message = "Nom d'utilisateur ou mot de passe incorrect"
-        return render_template('login.html', message=error_message)
+        return jsonify({"status": "error", "message": error_message})
     
-    return render_template('login.html')
-        
-
-
 @app.route('/logout', methods=['GET', 'POST'])
 def logout():
-    resp = make_response(redirect('/'))
+    resp = make_response(jsonify({"status": "success", "message": "Vous êtes maintenant déconnecté"}))
     resp.delete_cookie('username')
     return resp
 
