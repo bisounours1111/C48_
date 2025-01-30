@@ -19,7 +19,7 @@ def post_detail(post_id):
 # ✅ Création d'un article (si connecté)
 @blog.route("/blog/create", methods=["GET", "POST"])
 def create_post():
-    if "username" not in session:
+    if "user_id" not in session:
         flash("Vous devez être connecté pour écrire un article.", "error")
         return redirect(url_for("login"))
 
@@ -49,7 +49,7 @@ def add_comment():
     new_comment = Comment(content=content, user_id=session["user_id"], post_id=post_id)
     db.session.add(new_comment)
     db.session.commit()
-    return jsonify({"status": "success", "message": "Commentaire ajouté !"})
+    return redirect(url_for("blog.post_detail", post_id=post_id))
 
 # ✅ Liker un article
 @blog.route("/blog/like", methods=["POST"])

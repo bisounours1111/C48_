@@ -38,25 +38,26 @@ def register():
     update.registertoDB(username, email, password)
     return jsonify({"status": "success", "message": "Vous êtes maintenant inscrit"})
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    username = request.form.get('username')
-    password = request.form.get('password')
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
 
-    if checks.checklogin(username, password):
-        resp = make_response(jsonify({"status": "success", "message": "Vous êtes maintenant connecté"}))
-        resp.set_cookie('username', username)
-        id = update.getUserId(username)
-        session['user_id'] = id
-        return resp
+        if checks.checklogin(username, password):
+            resp = make_response(redirect('/'))
+            session['user_id'] = update.getUserId(username)
+            return resp
+        
+        return jsonify({"status": "error", "message": "Nom d'utilisateur ou mot de passe incorrect"})
     
-    return jsonify({"status": "error", "message": "Nom d'utilisateur ou mot de passe incorrect"})
+    return render_template('login.html')
+    
 
 @app.route('/logout', methods=['GET', 'POST'])
 def logout():
     resp = make_response(redirect('/'))
-    session.pop('username', None)
-    resp.set_cookie('username', '', expires=0)
+    session.pop('user_id', None)
     return resp
 
 if __name__ == '__main__':
