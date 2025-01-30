@@ -1,92 +1,182 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carte L4 - Leaflet</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>EcoMELange</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.12/css/weather-icons.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
-        #map { height: 600px; }
-    </style>
-</head>
-<body>
-    <h1>Trajet de la Ligne L4 avec Arrêts</h1>
-    <div id="map"></div>
-
-    <script>
-        // Initialisation de la carte centrée sur Lille
-        var map = L.map('map').setView([50.62925, 3.057256], 12);
-
-        // Ajout du fond de carte OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-
-        async function fetchAndDisplayRoute() {
-            try {
-                const responseRoute = await fetch("https://data.lillemetropole.fr/geoserver/ows?SERVICE=WFS&REQUEST=GetFeature&VERSION=2.0.0&TYPENAMES=dsp_ilevia%3Ailevia_traceslignes&OUTPUTFORMAT=application%2Fjson");
-                if (!responseRoute.ok) {
-                    throw new Error('Erreur lors de la récupération des données de la ligne L8.');
-                }
-
-                const dataRoute = await responseRoute.json();
-
-                // Vérification des données de la ligne L8
-                console.log(dataRoute);
-
-                if (dataRoute && dataRoute.features && dataRoute.features.length > 0) {
-                    const lineData = dataRoute.features.find(feature => feature.properties.ligne === "L4"); // Cherche la ligne L8
-                    console.log(lineData);
-                    if (lineData) {
-                        const coordinates = lineData.geometry.coordinates;
-
-                        const polyline = L.polyline(coordinates.map(coord => [coord[1], coord[0]]), {
-                            color: '#004F9F',  // La couleur de la ligne
-                            weight: 4,  // Poids de la ligne
-                            opacity: 0.7
-                        }).addTo(map);
-
-                        // Ajouter un événement pour afficher le nom de la ligne au clic
-                        polyline.on('click', function() {
-                            alert("Nom de la ligne : " + lineData.properties.name);
-                        });
-
-                        // Ajuste la vue de la carte pour la polyline
-                        map.fitBounds(polyline.getBounds());
-                    } else {
-                        console.log("La ligne L8 n'a pas été trouvée dans les données.");
-                    }
-                }
-
-                // Récupération des arrêts  
-                const responseStops = await fetch("https://data.lillemetropole.fr/data/ogcapi/collections/ilevia:physical_stop/items?f=json&limit=-1");
-                if (!responseStops.ok) {
-                    throw new Error('Erreur lors de la récupération des arrêts.');
-                }
-
-                const dataStops = await responseStops.json();
-
-                // Affichage des arrêts pour la ligne L8
-                dataStops.records.forEach(stop => {
-                    if (stop.code_ligne_public.includes("L4")) { // Si l'arrêt est lié à la ligne L4
-                        const stopCoordinates = [stop.y, stop.x]; // y = latitude, x = longitude
-                        const stopMarker = L.marker(stopCoordinates).addTo(map);
-
-                        // Ajouter un popup pour chaque arrêt avec son nom
-                        stopMarker.bindPopup("<b>Arrêt : </b>" + stop.nom_commercial_arret);
-                    }
-                });
-
-            } catch (error) {
-                console.error('Erreur :', error);
-                alert('Une erreur est survenue lors du chargement des données.');
-            }
+        body {
+            margin: 0;
+            padding: 0;
         }
 
-        // Appel de la fonction pour afficher la ligne L4 et les arrêts
-        fetchAndDisplayRoute();
-    </script>
+        .navbar a:hover {
+            color: #1D4ED8;
+            background-color: #E5E7EB;
+        }
+
+        .menu-icon {
+            width: 30px;
+            height: 30px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+    <nav class="bg-white border-gray-200 dark:bg-gray-900">
+        <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+            <!-- Logo -->
+            <a href="#" class="flex items-center space-x-3 rtl:space-x-reverse">
+                <img src="/static/ressources/img/logo.png" class="h-8" alt="EcoMELange Logo" />
+                <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">EcoMELange</span>
+            </a>
+
+            <!-- Bouton menu burger -->
+            <button id="menu-toggle" aria-label="Ouvrir le menu" class="md:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white focus:outline-none">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+
+            <!-- Menu principal -->
+            <div id="navbar-default" class="hidden w-full md:flex md:w-auto">
+                <ul class="font-medium flex flex-col md:flex-row md:space-x-8 p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900 dark:border-gray-700">
+                    <li><a href="#" class="block py-2 px-3 text-blue-700 hover:text-blue-700 md:p-0 dark:text-white">Accueil</a></li>
+                    <li><a href="#" class="block py-2 px-3 text-gray-900 hover:text-blue-700 md:p-0  dark:text-white">Blog/Actualités</a></li>
+                    <li>
+                        <a href="#" class="inline-block py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            Connexion
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenu principal -->
+    <div class="flex flex-col md:flex-row p-4 space-y-4 md:space-y-0 md:space-x-4">
+
+        <!-- Section Informations supplémentaires -->
+        <div class="md:w-3/4 bg-white p-4 border border-gray-200 rounded-lg shadow-lg h-80 md:h-80 pb-0">
+            <h2 class="text-xl font-semibold text-gray-800">Informations supplémentaires</h2>
+            <p class="text-gray-600 mt-2">
+                <strong>EcoMELange</strong> est une initiative dédiée à la sensibilisation et à l'action pour un avenir plus durable. 
+                Nous proposons des outils interactifs pour mesurer et réduire son empreinte carbone, suivre la qualité de l'air et 
+                adopter des habitudes éco-responsables. Notre mission est d’accompagner chacun vers un mode de vie plus respectueux 
+                de l’environnement, en alliant technologie et engagement écologique.
+            </p>
+        </div>
+        
+        <!-- Carte Météo -->
+        <div class="md:w-1/4 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden h-80 md:h-80 pb-0">
+            <div class="bg-blue-600 p-4">
+                <h2 class="text-2xl font-semibold text-white">Météo en direct</h2>
+            </div>
+            <div id="weather-card" class="px-6 pt-4 pb-0">
+                <div class="text-center">
+                    <p class="text-lg font-semibold text-gray-700" id="location">Chargement...</p>
+                    <div class="flex items-center justify-center mt-4">
+                        <div id="weather-icon" class="w-12 h-12"></div>
+                        <div>
+                            <h3 id="temperature" class="text-4xl font-bold text-gray-900">--°C</h3>
+                            <p id="weather-description" class="text-sm text-gray-500">Chargement...</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-gray-700">
+                        <p><strong>Humidité:</strong> <span id="humidity">--%</span></p>
+                        <p><strong>Vent:</strong> <span id="wind-speed">-- km/h</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Autres sections (Bloc 1 et Bloc 2) -->
+    <div class="flex flex-col md:flex-row p-4 space-y-4 md:space-y-0 md:space-x-4">
+
+        <!-- Bloc 1 -->
+        <div class="md:w-3/4 flex flex-col space-y-4">
+            <div id="AQI" class="h-1/2 rounded-xl bg-gradient-to-r from-teal-400 to-purple-500 text-white p-4 flex flex-col md:flex-row items-center justify-center">
+                <canvas id="aqiCanvas" class="w-32 h-32 md:mr-4"></canvas>
+                    <p class="text-4xl font-bold hidden" id="aqiValue">--</p>
+
+                <div class="flex flex-col items-center md:items-start text-center md:text-left mt-4 md:mt-0">
+                    <div id="aqiLabel" class="text-2xl font-semibold">AQI</div>
+                    <div id="pm25" class="text-sm font-medium">PM2.5: </div>
+                    <div id="pm10" class="text-sm font-medium">PM10: </div>
+                </div>
+            </div>
+            <div class="bg-green-500 h-1/2 p-4 rounded-lg shadow-md flex flex-col items-center space-y-4">
+                <p class="text-white text-lg font-bold">Conseil vert</p>
+                <div class="flex justify-between w-full px-8">
+                    <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg">
+                        <i class="fas fa-bicycle text-green-500 text-4xl"></i>
+                    </div>
+                    <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg">
+                        <i class="fas fa-recycle text-green-500 text-4xl"></i>
+                    </div>
+                    <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg">
+                        <i class="fas fa-tree text-green-500 text-4xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bloc Vertical -->
+        <div class="md:w-1/4 w-full bg-gray-700 p-4 pt-0 rounded-lg shadow-md text-white">
+            <h2 class="text-lg font-semibold mb-2">Calculateur Empreinte Carbone :</h2>
+
+            <form id="carbonCalculator" class="flex flex-col space-y-2">
+                <label class="text-sm">Kilomètres en voiture (par mois) :</label>
+                <input type="number" id="carKm" class="p-2 rounded text-white" placeholder="Ex: 500" />
+
+                <label class="text-sm">Électricité (kWh/mois) :</label>
+                <input type="number" id="electricity" class="p-2 rounded text-white" placeholder="Ex: 200" />
+
+                <label class="text-sm">Viande consommée (kg/semaine) :</label>
+                <input type="number" id="meat" class="p-2 rounded text-white" placeholder="Ex: 2" />
+
+                <button type="button" onclick="calculateCarbon()" class="bg-green-500 text-white p-2 rounded-lg mt-2 hover:bg-green-600">
+                    Calculer
+                </button>
+            </form>
+
+            <div id="result" class="mt-4 text-center text-lg font-semibold"></div>
+        </div>
+    </div>
+
 </body>
+
+<script src="/static/ressources/js/meteo.js"></script>
+<script src="/static/ressources/js/AQI.js"></script>
+<script>
+    $(document).ready(function() {
+        // Menu burger
+        $('#menu-toggle').click(function() {
+            $('#navbar-default').toggleClass('hidden');
+        });
+    });
+
+    function calculateCarbon() {
+        let carKm = parseFloat(document.getElementById("carKm").value) || 0;
+        let electricity = parseFloat(document.getElementById("electricity").value) || 0;
+        let meat = parseFloat(document.getElementById("meat").value) || 0;
+
+        // Facteurs d'émission estimés
+        let carCO2 = carKm * 0.2;  // 200g de CO2 par km
+        let electricityCO2 = electricity * 0.5; // 500g de CO2 par kWh
+        let meatCO2 = meat * 27 * 4; // 27kg de CO2 par kg de viande par mois
+
+        let totalCO2 = carCO2 + electricityCO2 + meatCO2;
+
+        document.getElementById("result").innerText = `Votre empreinte carbone estimée est de ${totalCO2.toFixed(2)} kg de CO2/mois.`;
+    }
+</script>
+
 </html>
