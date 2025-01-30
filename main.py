@@ -1,11 +1,11 @@
-from cred import conn
+from flask import Flask, render_template, session, request, redirect, make_response, jsonify
+from database import create_app
+from blogs import blog
 import checks
 import update
-from flask import Flask, render_template, request , redirect, make_response, jsonify
 
-app = Flask(__name__)
-
-cur = conn.cursor()
+app = create_app()
+app.register_blueprint(blog)  # Ajoute la partie blog
 
 @app.route('/')
 def index():
@@ -17,52 +17,45 @@ def get_login_template():
 
 @app.route('/register', methods=['POST'])
 def register():
-    if request.method == 'POST':
-        email = request.form['email']
-        username = request.form['username']
-        password = request.form['password']
-        confirmed_pw = request.form['confirm_password']
-        error_message = None
+    email = request.form.get('email')
+    username = request.form.get('username')
+    password = request.form.get('password')
+    confirmed_pw = request.form.get('confirm_password')
 
-        if checks.isUsernameTaken(username):
-            error_message = "Le nom d'utilisateur est déjà pris"
-        elif checks.isEmailTaken(email):
-            error_message = "L'addresse mail est déjà enregistré"
-        elif not checks.validEmail(email):
-            error_message = "L'addresse mail n'est pas valide"
-        elif not checks.validUsername(username):
-            error_message = "Le nom d'utilisateur doit contenir entre 4 et 16 lettres"
-        elif not checks.securePassword(password):
-            error_message = "Le mot de passe doit contenir au minimum : 8 caractères, 1 majuscule, 1 minuscule, 1 caractère spécial"
-        elif password != confirmed_pw:
-            error_message = "Les mots de passe ne correspondent pas"
+    if checks.isUsernameTaken(username):
+        return jsonify({"status": "error", "message": "Le nom d'utilisateur est déjà pris"})
+    if checks.isEmailTaken(email):
+        return jsonify({"status": "error", "message": "L'adresse mail est déjà enregistrée"})
+    if not checks.validEmail(email):
+        return jsonify({"status": "error", "message": "L'adresse mail n'est pas valide"})
+    if not checks.validUsername(username):
+        return jsonify({"status": "error", "message": "Le nom d'utilisateur doit contenir entre 4 et 16 lettres"})
+    if not checks.securePassword(password):
+        return jsonify({"status": "error", "message": "Le mot de passe doit contenir au minimum : 8 caractères, 1 majuscule, 1 minuscule, 1 caractère spécial"})
+    if password != confirmed_pw:
+        return jsonify({"status": "error", "message": "Les mots de passe ne correspondent pas"})
 
-        if error_message:
-            return jsonify({"status": "error", "message": error_message})
-        
-        update.registertoDB(username, email, password)
-        return jsonify({"status": "success", "message": "Vous êtes maintenant inscrit"})
-    
+    update.registertoDB(username, email, password)
+    return jsonify({"status": "success", "message": "Vous êtes maintenant inscrit"})
 
 @app.route('/login', methods=['POST'])
 def login():
-    if request.method == "POST":
-        username = request.form['username']
-        password = request.form['password']
-        error_message = None
-        
-        if checks.checklogin(username, password):
-            resp = make_response(jsonify({"status": "success", "message": "Vous êtes maintenant connecté"}))
-            resp.set_cookie('username', username)
-            return resp
-        
-        error_message = "Nom d'utilisateur ou mot de passe incorrect"
-        return jsonify({"status": "error", "message": error_message})
+    username = request.form.get('username')
+    password = request.form.get('password')
+
+    if checks.checklogin(username, password):
+        resp = make_response(jsonify({"status": "success", "message": "Vous êtes maintenant connecté"}))
+        resp.set_cookie('username', username)
+        session['username'] = username
+        return resp
     
+    return jsonify({"status": "error", "message": "Nom d'utilisateur ou mot de passe incorrect"})
+
 @app.route('/logout', methods=['GET', 'POST'])
 def logout():
-    resp = make_response(jsonify({"status": "success", "message": "Vous êtes maintenant déconnecté"}))
-    resp.delete_cookie('username')
+    resp = make_response(redirect('/'))
+    session.pop('username', None)
+    resp.set_cookie('username', '', expires=0)
     return resp
 
 if __name__ == '__main__':
