@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carte L4 - Leaflet</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        #map { height: 600px; }
+    </style>
+</head>
+<body>
+    <h1>Trajet de la Ligne L4 avec Arrêts</h1>
+    <div id="map"></div>
+
+    <script>
+        // Initialisation de la carte centrée sur Lille
+        var map = L.map('map').setView([50.62925, 3.057256], 12);
+
+        // Ajout du fond de carte OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        async function fetchAndDisplayRoute() {
+            try {
+                const responseRoute = await fetch("https://data.lillemetropole.fr/geoserver/ows?SERVICE=WFS&REQUEST=GetFeature&VERSION=2.0.0&TYPENAMES=dsp_ilevia%3Ailevia_traceslignes&OUTPUTFORMAT=application%2Fjson");
+                if (!responseRoute.ok) {
+                    throw new Error('Erreur lors de la récupération des données de la ligne L8.');
+                }
+
+                const dataRoute = await responseRoute.json();
+
+                // Vérification des données de la ligne L8
+                console.log(dataRoute);
+
+                if (dataRoute && dataRoute.features && dataRoute.features.length > 0) {
+                    const lineData = dataRoute.features.find(feature => feature.properties.ligne === "L4"); // Cherche la ligne L8
+                    console.log(lineData);
+                    if (lineData) {
+                        const coordinates = lineData.geometry.coordinates;
+
+                        const polyline = L.polyline(coordinates.map(coord => [coord[1], coord[0]]), {
+                            color: '#004F9F',  // La couleur de la ligne
+                            weight: 4,  // Poids de la ligne
+                            opacity: 0.7
+                        }).addTo(map);
+
+                        // Ajouter un événement pour afficher le nom de la ligne au clic
+                        polyline.on('click', function() {
+                            alert("Nom de la ligne : " + lineData.properties.name);
+                        });
+
+                        // Ajuste la vue de la carte pour la polyline
+                        map.fitBounds(polyline.getBounds());
+                    } else {
+                        console.log("La ligne L8 n'a pas été trouvée dans les données.");
+                    }
+                }
+
+                // Récupération des arrêts  
+                const responseStops = await fetch("https://data.lillemetropole.fr/data/ogcapi/collections/ilevia:physical_stop/items?f=json&limit=-1");
+                if (!responseStops.ok) {
+                    throw new Error('Erreur lors de la récupération des arrêts.');
+                }
+
+                const dataStops = await responseStops.json();
+
+                // Affichage des arrêts pour la ligne L8
+                dataStops.records.forEach(stop => {
+                    if (stop.code_ligne_public.includes("L4")) { // Si l'arrêt est lié à la ligne L4
+                        const stopCoordinates = [stop.y, stop.x]; // y = latitude, x = longitude
+                        const stopMarker = L.marker(stopCoordinates).addTo(map);
+
+                        // Ajouter un popup pour chaque arrêt avec son nom
+                        stopMarker.bindPopup("<b>Arrêt : </b>" + stop.nom_commercial_arret);
+                    }
+                });
+
+            } catch (error) {
+                console.error('Erreur :', error);
+                alert('Une erreur est survenue lors du chargement des données.');
+            }
+        }
+
+        // Appel de la fonction pour afficher la ligne L4 et les arrêts
+        fetchAndDisplayRoute();
+    </script>
+</body>
+</html>
