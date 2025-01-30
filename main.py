@@ -45,7 +45,7 @@ def register():
         return jsonify({"status": "error", "message": "Les mots de passe ne correspondent pas"})
 
     update.registertoDB(username, email, password)
-    return jsonify({"status": "success", "message": "Vous êtes maintenant inscrit"})
+    return redirect('/login')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
