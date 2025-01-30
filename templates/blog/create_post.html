@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Créer un Article{% endblock %}
+
+{% block content %}
+<div class="container mx-auto bg-white p-6 rounded shadow">
+    <h1 class="text-xl font-bold">Créer un nouvel article</h1>
+    <form action="/blog/create" method="POST">
+        <label class="block mt-2">Titre</label>
+        <input type="text" name="title" class="w-full border p-2 rounded" required>
+
+        <label class="block mt-2">Contenu</label>
+        <textarea name="content" class="w-full border p-2 rounded" rows="6" required></textarea>
+
+        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded mt-4">Publier</button>
+    </form>
+</div>
+{% endblock %}

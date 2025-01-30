@@ -8,12 +8,9 @@ def registertoDB(username : str, email : str, password : str):
     conn.commit()
     cur.close()
 
-def updatePassword(email, password):
+def getUserId(username : str):
     cur = conn.cursor()
-    hashedPassword = hashingPw(password)
-    cur.execute('UPDATE users SET password=%s, updated_at=NOW() WHERE email=%s', (hashedPassword, email,))
-    conn.commit()
+    cur.execute('SELECT id FROM users WHERE username = %s', (username,))
+    result = cur.fetchone()
     cur.close()
-    
-if __name__ == "__main__":
-    updatePassword('test@gmail.com', 'tes000t')
+    return result[0] if result else None
