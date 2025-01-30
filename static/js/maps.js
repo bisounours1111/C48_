@@ -36,10 +36,15 @@ function loadGeoJson(url, iconUrl) {
                 let typeEngin = feature.properties.type_engin || "Point d'intérêt";
 
                 if (iconUrl) {
+                    let newIconUrl = null;
+                    if (iconUrl === "/static/icons/velo.png") {
+                        newIconUrl =    typeEngin === "VAE"         ? "/static/icons/velo.png"        :    
+                                        typeEngin === "TE + VAE"    ? "/static/icons/trottinette.png" : null
+                    }
                     let marker = new google.maps.Marker({
                         position: { lat: coords[1], lng: coords[0] },
                         icon: {
-                            url: iconUrl,
+                            url: newIconUrl || iconUrl,
                             scaledSize: new google.maps.Size(40, 40)
                         },
                         title: typeEngin
