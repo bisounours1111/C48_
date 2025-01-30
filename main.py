@@ -46,7 +46,8 @@ def login():
     if checks.checklogin(username, password):
         resp = make_response(jsonify({"status": "success", "message": "Vous êtes maintenant connecté"}))
         resp.set_cookie('username', username)
-        session['username'] = username
+        id = update.getUserId(username)
+        session['user_id'] = id
         return resp
     
     return jsonify({"status": "error", "message": "Nom d'utilisateur ou mot de passe incorrect"})

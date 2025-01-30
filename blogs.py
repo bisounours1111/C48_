@@ -42,7 +42,7 @@ def create_post():
 def add_comment():
     if "user_id" not in session:
         return jsonify({"status": "error", "message": "Vous devez être connecté pour commenter."})
-
+    
     post_id = request.form["post_id"]
     content = request.form["content"]
 

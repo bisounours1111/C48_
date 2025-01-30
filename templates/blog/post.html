@@ -19,7 +19,7 @@
     {% endfor %}
 
     {% if session['user_id'] %}
-        <form id="commentForm" class="mt-4">
+        <form id="commentForm" class="mt-4" action="/blog/comment" method="post">
             <input type="hidden" name="post_id" value="{{ post.id }}">
             <textarea name="content" class="w-full border p-2" placeholder="Ajouter un commentaire"></textarea>
             <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">Commenter</button>
