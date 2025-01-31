@@ -2,6 +2,8 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from models import db
 from dotenv import load_dotenv
+from blogs import blog
+from actualities import actuality
 import os
 
 load_dotenv()
@@ -17,6 +19,9 @@ def create_app():
     app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{USER}:{PASSWORD}@{IP}/postgres"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.secret_key = SECRET_KEY
+    
+    app.register_blueprint(blog)
+    app.register_blueprint(actuality)
 
     db.init_app(app)
 

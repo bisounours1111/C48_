@@ -11,10 +11,35 @@ function initMap() {
         center: initialPlace,
         disableDefaultUI: true,
         styles: [
-            { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
-            { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] }
+            { elementType: "geometry", stylers: [{ color: "#f5f5f5" }] },
+            { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+            { elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
+            { elementType: "labels.text.stroke", stylers: [{ color: "#ffffff" }] },
+    
+            { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+            { featureType: "road.arterial", elementType: "geometry.fill", stylers: [{ color: "#ffe082" }] },
+            { featureType: "road.highway", elementType: "geometry.fill", stylers: [{ color: "#ffcc80" }] },
+            { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#ffa726" }] },
+            { featureType: "road.local", elementType: "geometry.fill", stylers: [{ color: "#ffffff" }] },
+            { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
+    
+            { featureType: "water", elementType: "geometry", stylers: [{ color: "#80d8ff" }] },
+            { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#007bb5" }] },
+    
+            { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#e0f7fa" }] },
+            { featureType: "landscape.man_made", elementType: "geometry", stylers: [{ color: "#b2ebf2" }] },
+    
+            { featureType: "poi", elementType: "geometry", stylers: [{ color: "#eeeeee" }] },
+            { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
+    
+            { featureType: "transit", elementType: "geometry", stylers: [{ color: "#bdbdbd" }] },
+            { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] },
+    
+            { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#d0d0d0" }] },
+            { featureType: "administrative", elementType: "labels.text.fill", stylers: [{ color: "#424242" }] }
         ]
     });
+    
 
     // Initialisation du MarkerClusterer
     markerClusterer = new MarkerClusterer(map, [], {
