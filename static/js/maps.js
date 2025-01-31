@@ -2,6 +2,7 @@ let map;
 let markers = [];
 let polygons = [];
 let markerClusterer;
+let infoWindow; // Ajout d'une infoWindow pour les marqueurs et polygones
 
 function initMap() {
     let initialPlace = { lat: 50.63506335331983, lng: 3.0582420070863803 };
@@ -15,6 +16,8 @@ function initMap() {
             { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] }
         ]
     });
+
+    infoWindow = new google.maps.InfoWindow(); // Création d'une seule InfoWindow
 
     // Initialisation du MarkerClusterer
     markerClusterer = new MarkerClusterer(map, [], {
@@ -35,19 +38,57 @@ function loadGeoJson(url, iconUrl) {
                 let coords = feature.geometry.coordinates;
                 let typeEngin = feature.properties.type_engin || "Point d'intérêt";
 
-                if (iconUrl) {
-                    let newIconUrl = null;
-                    if (iconUrl === "/static/icons/velo.png") {
-                        newIconUrl =    typeEngin === "VAE"         ? "/static/icons/velo.png"        :    
+                // Traitement des icônes vélo et trottinette
+                if (iconUrl === "/static/icons/velo.png") {
+
+                    newIconUrl =    typeEngin === "VAE"         ? "/static/icons/velo.png"        :    
                                         typeEngin === "TE + VAE"    ? "/static/icons/trottinette.png" : null
+
+                    // Si une icône est trouvée, créer un marqueur
+                    if (newIconUrl) {
+                        let marker = new google.maps.Marker({
+                            position: { lat: coords[1], lng: coords[0] },
+                            icon: {
+                                url: newIconUrl,
+                                scaledSize: new google.maps.Size(40, 40)
+                            },
+                            title: typeEngin,
+                            map: map
+                        });
+
+                        marker.addListener("click", () => {
+                            infoWindow.setContent(`<strong>${typeEngin}</strong><br>`);
+                            infoWindow.open(map, marker);
+                        });
+
+                        markers.push(marker);
+                        newMarkers.push(marker);
                     }
+                }
+
+                // Marqueurs de recyclage et compost
+                else if (iconUrl === "/static/icons/recycle_vert.png" || iconUrl === "/static/icons/recycle.png" || iconUrl === "/static/icons/compost.png") {
+                    let nom = feature.properties.nom || feature.properties.nom_site;
+
+                    let horaire = feature.properties.information || "Aucune information";
+                    let access = feature.properties.lib_acces || "Accès non spécifié";
+
                     let marker = new google.maps.Marker({
                         position: { lat: coords[1], lng: coords[0] },
                         icon: {
-                            url: newIconUrl || iconUrl,
+                            url: iconUrl,
                             scaledSize: new google.maps.Size(40, 40)
                         },
-                        title: typeEngin
+                        title: "Point de recyclage / Compost",
+                        map: map
+                    });
+
+                    marker.addListener("click", () => {
+                        let content = iconUrl === "/static/icons/compost.png" 
+                            ? `<strong>${nom}</strong><br>${access}`
+                            : `<strong>${nom}</strong><br>: ${horaire}`;
+                        infoWindow.setContent(content);
+                        infoWindow.open(map, marker);
                     });
 
                     markers.push(marker);
@@ -68,6 +109,14 @@ function loadParcGeoJson(url) {
         .then(data => {
             data.features.forEach(feature => {
                 let coordinates = feature.geometry.coordinates[0].map(coord => ({ lat: coord[1], lng: coord[0] }));
+                let parcName = feature.properties.nom || "Parc";
+                let parcDescription = 
+                feature.properties.etat_ouver === "Permanente" 
+                    ? "Ouvert en permanence" 
+                    : (feature.properties.horaires_o && feature.properties.horaires_1 
+                        ? feature.properties.horaires_o + " - " + feature.properties.horaires_1 
+                        : "Aucune information disponible.");
+
 
                 let parcPolygon = new google.maps.Polygon({
                     paths: coordinates,
@@ -79,19 +128,26 @@ function loadParcGeoJson(url) {
                     map: map
                 });
 
+                // Ajouter un événement de clic sur le polygone
+                parcPolygon.addListener("click", (event) => {
+                    infoWindow.setContent(`<strong>${parcName}</strong><br>${parcDescription}`);
+                    infoWindow.setPosition(event.latLng);
+                    infoWindow.open(map);
+                });
+
                 polygons.push(parcPolygon);
             });
         })
         .catch(error => console.error("Erreur lors du chargement du fichier GeoJSON :", error));
 }
 
-// Fonction pour ouvrir la popup et charger les données
-function openPopup(geoJsonUrls, isParc = false) {
+
+function openPopup(geoJsonUrls) {
     popup.classList.remove("hidden");
 
     // Supprimer les anciens marqueurs et polygones
     markers.forEach(marker => marker.setMap(null));
-    markerClusterer.clearMarkers(); // Supprime les marqueurs du cluster
+    markerClusterer.clearMarkers();
     polygons.forEach(polygon => polygon.setMap(null));
 
     markers = [];
@@ -100,9 +156,9 @@ function openPopup(geoJsonUrls, isParc = false) {
     // Charger les données en fonction du type
     geoJsonUrls.forEach(dataset => {
         if (dataset.isParc) {
-            loadParcGeoJson(dataset.url);  // Charger des polygones
+            loadParcGeoJson(dataset.url);
         } else {
-            loadGeoJson(dataset.url, dataset.icon);  // Charger des points avec icônes spécifiques
+            loadGeoJson(dataset.url, dataset.icon);
         }
     });
 }
@@ -116,7 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
         openPopup([
             { url: "/static/composter.geojson", icon: "/static/icons/compost.png" },
             { url: "/static/dechet_mobile.geojson", icon: "/static/icons/recycle.png" },
-            { url: "/static/dechet_fixe.geojson", icon: "/static/icons/recycle.png" }
+            { url: "/static/dechet_fixe.geojson", icon: "/static/icons/recycle_vert.png" }
         ])
     );
 
@@ -127,7 +183,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("closePopupBtn").addEventListener("click", () => {
         popup.classList.add("hidden");
         markers.forEach(marker => marker.setMap(null));
-        markerClusterer.clearMarkers(); // Supprime les marqueurs du cluster
+        markerClusterer.clearMarkers();
         polygons.forEach(polygon => polygon.setMap(null));
     });
 

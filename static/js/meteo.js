@@ -119,7 +119,9 @@ const weatherDescriptions = {
 	235: "Averses de grêle",
 };
 // Fonction pour obtenir la météo en fonction des coordonnées
-function getWeather(lat, lon) {
+function getWeather() {
+	let lat = 50.6244;
+	let lon = 3.0679;
     // URL de l'API de Météo Concept avec les bonnes informations
     const url = `https://api.meteo-concept.com/api/forecast/nextHours?latlng=${lat},${lon}&token=${apiKey}`;
     
@@ -154,20 +156,4 @@ function getWeather(lat, lon) {
         });
 }
 
-// Fonction pour obtenir la localisation de l'utilisateur
-function getLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(position => {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            getWeather(lat, lon); // Obtenir la météo avec la position
-        }, () => {
-            document.getElementById('location').textContent = 'Impossible de récupérer la localisation.';
-        });
-    } else {
-        document.getElementById('location').textContent = 'Géolocalisation non supportée.';
-    }
-}
-
-// Appeler la fonction pour récupérer la localisation et afficher la météo
-getLocation();
+getWeather();
