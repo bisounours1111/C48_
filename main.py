@@ -1,6 +1,5 @@
 from flask import Flask, render_template, session, request, redirect, make_response, jsonify
 from database import create_app
-from blogs import blog
 import checks
 import update
 import os
@@ -10,14 +9,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 app = create_app()
-app.register_blueprint(blog)  # Ajoute la partie blog
 
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
-
 @app.route('/')
 def index():
-    print('here', GOOGLE_MAPS_API_KEY)
     return render_template('index.html', google_maps_api_key=GOOGLE_MAPS_API_KEY)
 
 @app.route("/get_login_template")

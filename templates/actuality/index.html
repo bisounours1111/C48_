@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="bg-white shadow-md rounded-lg p-6">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">Actualités des Projets Urbains</h2>
+        
+        <p class="text-gray-600 mb-6">
+            La Métropole Européenne de Lille s’engage dans l'amélioration des infrastructures urbaines à travers
+            plusieurs projets de transport et de mobilités douces. Voici un aperçu des initiatives en cours.
+        </p>
+
+        <!-- Section sur la Marche en Métropole -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-semibold text-blue-700">🚶‍♂️ Amélioration de la Marche Urbaine</h3>
+            <p class="text-gray-600 mt-2">
+                La marche est un mode de déplacement clé pour les habitants. L’objectif est de rendre la ville plus agréable,
+                sécurisée et accessible aux piétons en favorisant des trottoirs élargis, des espaces verts et des parcours optimisés.
+            </p>
+
+            <ul class="list-disc pl-6 mt-3 text-gray-600">
+                <li>🏙 Réduction des obstacles urbains et élargissement des trottoirs</li>
+                <li>🌳 Création de nouvelles zones piétonnes et végétalisation des parcours</li>
+                <li>🚦 Amélioration de la sécurité aux passages piétons</li>
+            </ul>
+
+            <div class="mt-4">
+                <a href="{{ url_for('actuality.walks') }}" 
+                   class="inline-block px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition">
+                    En savoir plus
+                </a>
+            </div>
+        </div>
+
+        <!-- Section sur les Transports en Commun -->
+        <div class="mb-8">
+            <h3 class="text-2xl font-semibold text-green-700">🚍 Développement des Transports en Commun</h3>
+            <p class="text-gray-600 mt-2">
+                Pour faciliter les déplacements et réduire la congestion urbaine, la MEL met en place de nouvelles lignes de transport.
+                Ces projets visent à renforcer l’intermodalité et proposer des alternatives efficaces à la voiture individuelle.
+            </p>
+
+            <ul class="list-disc pl-6 mt-3 text-gray-600">
+                <li>🚎 Déploiement du Bus à Haut Niveau de Service (BHNS)</li>
+                <li>🚊 Études pour une meilleure connexion entre tramway et métro</li>
+                <li>🚲 Intégration des vélos dans les transports publics</li>
+            </ul>
+
+            <div class="mt-4">
+                <a href="{{ url_for('actuality.transports') }}" 
+                   class="inline-block px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition">
+                    Découvrir les projets
+                </a>
+            </div>
+        </div>
+
+        <!-- Section avec une carte interactive -->
+        <div class="mt-8">
+            <h3 class="text-2xl font-semibold text-gray-800">🗺 Carte des projets en cours</h3>
+            <p class="text-gray-600 mt-2">
+                Visualisez les zones d’aménagements et les nouvelles infrastructures directement sur la carte ci-dessous.
+            </p>
+
+            <div class="mt-4 w-full h-96 bg-gray-300 flex items-center justify-center rounded-lg">
+                <div class="contact-map" style="width: 100%; height: 100%;">
+                    <div id="map" style="width: 100%; height: 100%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+let map;
+let polylines = [];
+
+function initMap() {
+    let initialPlace = { lat: 50.635063, lng: 3.058242 };
+
+    map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 12,
+        center: initialPlace,
+        disableDefaultUI: true,
+        styles: [
+            { elementType: "geometry", stylers: [{ color: "#f5f5f5" }] },
+            { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+            { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+            { featureType: "road.highway", elementType: "geometry.fill", stylers: [{ color: "#ffcc80" }] },
+            { featureType: "water", elementType: "geometry", stylers: [{ color: "#80d8ff" }] },
+            { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#e0f7fa" }] },
+            { featureType: "transit", elementType: "geometry", stylers: [{ color: "#bdbdbd" }] },
+            { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#d0d0d0" }] }
+        ]
+    });
+
+    // Charger le fichier GeoJSON
+    fetch("/static/travaux.geojson")
+        .then(response => response.json())
+        .then(data => {
+            data.features.forEach(feature => {
+                let coordinates = feature.geometry.coordinates.map(coord => ({ 
+                    lat: coord[1], 
+                    lng: coord[0] 
+                }));
+
+                let polyline = new google.maps.Polyline({
+                    path: coordinates,
+                    geodesic: true,
+                    strokeColor: "#ff5722",
+                    strokeOpacity: 0.8,
+                    strokeWeight: 4,
+                    map: map
+                });
+
+                let infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div>
+                            <h3 style="margin: 0;">${feature.properties.libelle_ope}</h3>
+                            <p><b>Commune :</b> ${feature.properties.commune}</p>
+                            <p><b>Description :</b> ${feature.properties.description_ope}</p>
+                            <p><b>Début :</b> ${feature.properties.date_demarrage.split('T')[0]}</p>
+                            <p><b>Fin :</b> ${feature.properties.date_fin.split('T')[0]}</p>
+                        </div>
+                    `
+                });
+
+                polyline.addListener("click", () => {
+                    infoWindow.setPosition(coordinates[Math.floor(coordinates.length / 2)]);
+                    infoWindow.open(map);
+                });
+
+                polylines.push(polyline);
+            });
+        })
+        .catch(error => console.error("Erreur lors du chargement du GeoJSON:", error));
+}
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap&libraries"></script>
+<script src="https://unpkg.com/@googlemaps/markerclustererplus/dist/index.min.js"></script>
+    
+{% endblock %}
