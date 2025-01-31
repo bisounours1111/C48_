@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold">{{ post.title }}</h1>
+    <p class="text-gray-600">{{ post.content }}</p>
+    <p class="text-sm text-gray-400">Publié par {{ post.author.username }} - {{ post.created_at.strftime('%d/%m/%Y') }}</p>
+
+    <hr class="my-4">
+
+    <h2 class="text-lg font-semibold">Commentaires</h2>
+    {% for comment in post.comments %}
+        <div class="border-l-4 border-blue-500 pl-4 my-2">
+            <p>{{ comment.content }}</p>
+            <p class="text-sm text-gray-400">Par {{ comment.author.username }} - {{ comment.created_at.strftime('%d/%m/%Y') }}</p>
+        </div>
+    {% endfor %}
+
+    {% if session['user_id'] %}
+        <form id="commentForm" class="mt-4" action="/blog/comment" method="post">
+            <input type="hidden" name="post_id" value="{{ post.id }}">
+            <textarea name="content" class="w-full border p-2" placeholder="Ajouter un commentaire"></textarea>
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">Commenter</button>
+        </form>
+    {% else %}
+        <p class="text-red-500">Connectez-vous pour commenter.</p>
+    {% endif %}
+</div>
+{% endblock %}
